@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const tableBody = document.querySelector("#tablaPrestamo tbody");
-    const apiUrl = "http://localhost:8080/IntegradoraII_Web/api/prestamos/getAll";
+    const apiUrl = "https://netbeansintegradora-production.up.railway.app/api/prestamos/getAll";
 
     // --- 1. FUNCIÓN DE CARGA DE TABLA ---
     window.fetchPrestamo = async function () {

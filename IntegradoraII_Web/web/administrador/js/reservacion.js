@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const URL_BASE = "http://localhost:8080/IntegradoraII_Web/api/reservacion";
+    const URL_BASE = "https://netbeansintegradora-production.up.railway.app/api/reservacion";
 
     const nombre = localStorage.getItem("nombre_usuario") || "Usuario";
     const rolRaw = localStorage.getItem("id_rol") || "Invitado";
