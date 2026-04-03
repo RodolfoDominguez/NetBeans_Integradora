@@ -18,13 +18,16 @@ import java.io.IOException;
 @Provider
 public class CORSFilter implements ContainerResponseFilter {
     @Override
-    public void filter(ContainerRequestContext requestContext, 
-                       ContainerResponseContext responseContext) throws IOException {
-        
-        // Permite que tu app de Ionic (localhost:8100) acceda a los datos
+    public void filter(ContainerRequestContext requestContext,
+            ContainerResponseContext responseContext) throws IOException {
+
         responseContext.getHeaders().add("Access-Control-Allow-Origin", "*");
+        responseContext.getHeaders().add("Access-Control-Allow-Headers", "origin, Content-Type, accept, Authorization");
         responseContext.getHeaders().add("Access-Control-Allow-Credentials", "true");
-        responseContext.getHeaders().add("Access-Control-Allow-Headers", "origin, content-type, accept, authorization");
         responseContext.getHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD");
+
+        if (requestContext.getMethod().equalsIgnoreCase("OPTIONS")) {
+            responseContext.setStatus(200);
+        }
     }
 }
