@@ -1,6 +1,14 @@
+/**
+ * Archivo: reservacion.js
+ * Controlador de la vista de reservaciones con integracion de SweetAlert2 y rutas de produccion
+ */
 document.addEventListener('DOMContentLoaded', () => {
+    // ==========================================
+    // Rutas de produccion para servidor Railway (Activas)
+    // ==========================================
     const URL_BASE = "https://netbeansintegradora-production.up.railway.app/api/reservacion";
 
+    // Recuperacion de informacion de sesion
     const nombre = localStorage.getItem("nombre_usuario") || "Usuario";
     const rolRaw = localStorage.getItem("id_rol") || "Invitado";
     
@@ -17,87 +25,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectEdificio = document.getElementById('edificioSelect');
     const selectSalon = document.getElementById('salonSelect');
 
-    function mostrarAlerta(mensaje, esError = false) {
-        const modalId = 'customAlertModal';
-        let existingModal = document.getElementById(modalId);
-        if (existingModal) existingModal.remove();
-
-        const headerColor = esError ? 'background-color: #dc3545; color: white;' : 'background-color: #2a2155; color: white;';
-        const titulo = esError ? 'Error' : 'Aviso';
-
-        const html = `
-            <div class="modal fade" id="${modalId}" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered modal-sm">
-                    <div class="modal-content border-0 shadow" style="border-radius: 12px; overflow: hidden;">
-                        <div class="modal-header border-0" style="${headerColor}">
-                            <h6 class="modal-title m-0 fw-bold">${titulo}</h6>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body text-center p-4">
-                            <p class="mb-0 fs-6 text-dark" style="font-weight: 500;">${mensaje}</p>
-                        </div>
-                        <div class="modal-footer border-0 justify-content-center pb-4">
-                            <button type="button" class="btn text-white px-4" style="background-color: #2a2155; border-radius: 8px;" data-bs-dismiss="modal">Aceptar</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', html);
-        new bootstrap.Modal(document.getElementById(modalId)).show();
-        
-        const nombre = localStorage.getItem("nombre_usuario") || "Usuario";
-    const rolRaw = localStorage.getItem("id_rol") || "Invitado";
-    
-    if (document.getElementById('userNameDisplay')) document.getElementById('userNameDisplay').textContent = nombre;
-    if (document.getElementById('userRoleDisplay')) document.getElementById('userRoleDisplay').textContent = rolRaw;
-    }
-
-    function mostrarConfirmacion(mensaje, callback) {
-        const modalId = 'customConfirmModal';
-        let existingModal = document.getElementById(modalId);
-        if (existingModal) existingModal.remove();
-
-        const html = `
-            <div class="modal fade" id="${modalId}" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered modal-sm">
-                    <div class="modal-content border-0 shadow" style="border-radius: 12px; overflow: hidden;">
-                        <div class="modal-header border-0 bg-danger text-white">
-                            <h6 class="modal-title m-0 fw-bold">Confirmación</h6>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body text-center p-4">
-                            <p class="mb-0 fs-6 text-dark" style="font-weight: 500;">${mensaje}</p>
-                        </div>
-                        <div class="modal-footer border-0 justify-content-center gap-2 pb-4">
-                            <button type="button" class="btn btn-light px-4" style="border-radius: 8px;" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="button" class="btn btn-danger px-4" style="border-radius: 8px;" id="btnConfirmarAccion">Eliminar</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', html);
-        const confirmModalEl = document.getElementById(modalId);
-        const confirmModal = new bootstrap.Modal(confirmModalEl);
-        
-        document.getElementById('btnConfirmarAccion').addEventListener('click', () => {
-            confirmModal.hide();
-            callback();
-        });
-        
-        confirmModal.show();
-    }
-
+    /**
+     * Consumo de servicio para obtener el listado de edificios y salones
+     */
     function cargarEdificiosYSalones() {
         fetch(`${URL_BASE}/getSalones`)
             .then(r => r.json())
             .then(data => {
                 salonesBD = data;
-                
                 const edificiosUnicos = [...new Set(salonesBD.map(s => s.edificio))];
                 
-                selectEdificio.innerHTML = '';
+                selectEdificio.innerHTML = '<option value="" disabled selected>Seleccione Edificio</option>';
                 edificiosUnicos.forEach(edificio => {
                     const option = document.createElement('option');
                     option.value = edificio;
@@ -109,12 +47,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     cargarSalones();
                 }
             })
-            .catch(e => mostrarAlerta("Error de conexión al cargar salones.", true));
+            .catch(e => {
+                console.error(e);
+                Swal.fire('Error', 'No se pudieron cargar los salones.', 'error');
+            });
     }
 
+    /**
+     * Filtrado dinamico de salones basado en el edificio seleccionado
+     */
     window.cargarSalones = () => {
         const edificioSeleccionado = selectEdificio.value;
-        selectSalon.innerHTML = '<option value="" disabled selected>Seleccione Salón</option>';
+        selectSalon.innerHTML = '<option value="" disabled selected>Seleccione Salon</option>';
         
         const salonesFiltrados = salonesBD.filter(s => s.edificio === edificioSeleccionado);
         
@@ -128,6 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     selectEdificio.addEventListener('change', cargarSalones);
 
+    /**
+     * Actualizacion de indicadores cuantitativos en la interfaz
+     */
     function actualizarTarjetas() {
         const total = reservaciones.length;
         const pendientes = reservaciones.filter(r => r.estatus === 'Pendiente').length;
@@ -140,6 +87,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /**
+     * Renderizado dinamico de la tabla de reservaciones
+     */
     function render() {
         tablaBody.innerHTML = '';
         reservaciones.forEach(res => {
@@ -168,9 +118,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>`;
             tablaBody.appendChild(tr);
         });
+        
         actualizarTarjetas();
+        actualizarFiltrosDesdeTabla(); 
     }
 
+    /**
+     * Obtencion de reservaciones desde la API
+     */
     function cargarReservaciones() {
         fetch(`${URL_BASE}/getAll`)
             .then(r => r.json())
@@ -178,9 +133,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 reservaciones = data;
                 render();
             })
-            .catch(e => mostrarAlerta("Error de conexión al cargar reservaciones.", true));
+            .catch(e => {
+                console.error(e);
+                Swal.fire('Error', 'Error de conexion al cargar las reservaciones.', 'error');
+            });
     }
 
+    /**
+     * Manejo del envio del formulario (Insertar/Actualizar)
+     */
     form.addEventListener('submit', (e) => {
         e.preventDefault();
         const id = document.getElementById('reservaId').value;
@@ -188,9 +149,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const salonElegido = parseInt(selectSalon.value);
         if (!salonElegido) {
-            mostrarAlerta("Por favor seleccione un salón.");
+            Swal.fire('Atencion', 'Por favor seleccione un salon.', 'warning');
             return;
         }
+
+        Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
         const reservacionObj = {
             idReserva: id ? parseInt(id) : 0,
@@ -211,16 +174,20 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(r => r.json())
         .then(data => {
             if (data.error) {
-                mostrarAlerta(data.error, true);
+                Swal.fire('Error', data.error, 'error');
             } else { 
                 modal.hide(); 
                 form.reset(); 
                 cargarReservaciones();
-                mostrarAlerta("La reservación se guardó exitosamente.");
+                Swal.fire('¡Exito!', 'La reservacion se guardo correctamente.', 'success');
             }
-        });
+        })
+        .catch(err => Swal.fire('Error', 'No se pudo procesar la solicitud.', 'error'));
     });
     
+    /**
+     * Carga de datos en el modal para edicion
+     */
     window.editRes = (id) => {
         const res = reservaciones.find(r => r.idReserva === id);
         if (res) {
@@ -230,7 +197,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             selectEdificio.value = res.nombreEdificio;
-            
             cargarSalones();
             
             for (let i = 0; i < selectSalon.options.length; i++) {
@@ -248,25 +214,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    /**
+     * Eliminacion de registro con confirmacion de SweetAlert2
+     */
     window.deleteRes = (id) => {
-        mostrarConfirmacion('¿Estás seguro de que deseas eliminar esta reservación?', () => {
-            const f = new URLSearchParams(); 
-            f.append("idReserva", id);
-            
-            fetch(`${URL_BASE}/eliminar`, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: f 
-            })
-            .then(r => r.json())
-            .then(data => {
-                if(data.error) {
-                    mostrarAlerta(data.error, true);
-                } else {
-                    cargarReservaciones();
-                    mostrarAlerta("Reservación eliminada correctamente.");
-                }
-            });
+        Swal.fire({
+            title: '¿Estas seguro?',
+            text: "Esta accion no se puede deshacer.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#2a2155',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Si, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const f = new URLSearchParams(); 
+                f.append("idReserva", id);
+                
+                fetch(`${URL_BASE}/eliminar`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: f 
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if(data.error) {
+                        Swal.fire('Error', data.error, 'error');
+                    } else {
+                        cargarReservaciones();
+                        Swal.fire('Eliminado', 'La reservacion ha sido borrada.', 'success');
+                    }
+                });
+            }
         });
     };
 
@@ -279,10 +259,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    /**
+     * Configuracion de los selectores de filtrado
+     */
+    function actualizarFiltrosDesdeTabla() {
+        const filas = document.querySelectorAll("#tablaReservas tr");
+        const edificios = new Set();
+        const estatusSet = new Set();
+
+        filas.forEach(fila => {
+            const celdas = fila.querySelectorAll("td");
+            if (celdas.length < 5) return;
+            edificios.add(celdas[1].textContent.trim());
+            estatusSet.add(celdas[4].textContent.trim().toUpperCase());
+        });
+
+        llenarSelect("filtroEdificioRes", edificios, "Todos los edificios");
+        llenarSelect("filtroEstadoRes", estatusSet, "Todos los estados");
+    }
+
+    function llenarSelect(id, valores, textoDefault) {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.innerHTML = `<option value="">${textoDefault}</option>`;
+        valores.forEach(v => select.innerHTML += `<option value="${v}">${v}</option>`);
+    }
+
+    /**
+     * Logica de filtrado visual de la tabla
+     */
+    document.getElementById("btnFiltrarRes")?.addEventListener("click", () => {
+        const edi = document.getElementById("filtroEdificioRes").value;
+        const est = document.getElementById("filtroEstadoRes").value;
+
+        document.querySelectorAll("#tablaReservas tr").forEach(fila => {
+            const celdas = fila.querySelectorAll("td");
+            if (celdas.length < 5) return;
+            
+            const edificio = celdas[1].textContent.trim();
+            const estado = celdas[4].textContent.trim().toUpperCase();
+
+            let visible = true;
+            if (edi && edificio !== edi) visible = false;
+            if (est && estado !== est) visible = false;
+
+            fila.style.display = visible ? "" : "none";
+        });
+    });
+
+    // Inicializacion de datos
     cargarEdificiosYSalones();
     cargarReservaciones();
 });
 
+/**
+ * Destruccion de sesion
+ */
 window.cerrarSesion = () => {
     localStorage.clear();
     window.location.href = "../index.html";
