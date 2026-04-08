@@ -16,7 +16,7 @@ import org.utl.dsm.integradoraweb.controller.ControllerUsuarios;
 import org.utl.dsm.integradoraweb.model.Usuarios;
 
 /**
- * Controlador REST para la gestion y exposicion de servicios de la entidad Usuarios
+ *
  * @author rodod
  */
 @Path("usuario")
@@ -28,10 +28,10 @@ public class RESTUsuarios {
     @Produces(MediaType.APPLICATION_JSON)
     public Response login(Usuarios ul) {
 
-        // --- Inicio de bloque de depuracion ---
-        // Registro en consola de los datos de autenticacion recibidos desde el cliente para monitoreo de peticiones
+        // --- INICIO DE LA CORRECCIÓN ---
+        // Este "chismoso" imprimirá en la consola de NetBeans lo que llega desde tu página web
         System.out.println("LLEGÓ A JAVA -> Matrícula: " + ul.getMatricula() + " | Pass: " + ul.getContrasenia());
-        // --- Fin de bloque de depuracion ---
+        // --- FIN DE LA CORRECCIÓN ---
 
         try {
             ControllerUsuarios ctrl = new ControllerUsuarios();
@@ -56,7 +56,7 @@ public class RESTUsuarios {
     }
 
     // ==========================================
-    // Seccion de endpoints correspondientes a las operaciones transaccionales (CRUD)
+    // MÉTODOS DE GESTIÓN DE USUARIOS
     // ==========================================
     
     @GET
@@ -142,7 +142,7 @@ public class RESTUsuarios {
     }
 
     // ==========================================
-    // Endpoints dedicados al flujo de recuperacion y restablecimiento de contrasenas
+    // MÉTODOS PARA RECUPERACIÓN DE CONTRASEÑA
     // ==========================================
 
     @POST
@@ -152,18 +152,16 @@ public class RESTUsuarios {
     public Response solicitarRecuperacion(Usuarios u) {
         try {
             ControllerUsuarios ctrl = new ControllerUsuarios();
-            
-            // Invocacion del controlador para la conexion con el servidor SMTP y generacion del correo electronico
             ctrl.enviarCorreoRecuperacion(u.getCorreo());
             
             JsonObject respuesta = new JsonObject();
-            respuesta.addProperty("mensaje", "Correo de recuperacion enviado exitosamente.");
+            respuesta.addProperty("mensaje", "Correo de recuperación enviado exitosamente.");
             return Response.status(Response.Status.OK).entity(respuesta.toString()).build();
-
+            
         } catch (Exception e) {
             e.printStackTrace();
             JsonObject error = new JsonObject();
-            error.addProperty("error", "Ocurrio un error al intentar enviar el correo.");
+            error.addProperty("error", "Ocurrió un error al intentar enviar el correo. Verifique si existe en la BD.");
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(error.toString()).build();
         }
     }
@@ -175,18 +173,16 @@ public class RESTUsuarios {
     public Response actualizarPassword(Usuarios u) {
         try {
             ControllerUsuarios ctrl = new ControllerUsuarios();
-            
-            // Ejecucion del metodo de persistencia para aplicar el cifrado y actualizar la credencial en la base de datos
             ctrl.actualizarPassword(u.getCorreo(), u.getContrasenia());
             
             JsonObject respuesta = new JsonObject();
-            respuesta.addProperty("mensaje", "Contrasena actualizada correctamente.");
+            respuesta.addProperty("mensaje", "Contraseña actualizada correctamente.");
             return Response.status(Response.Status.OK).entity(respuesta.toString()).build();
-
+            
         } catch (Exception e) {
             e.printStackTrace();
             JsonObject error = new JsonObject();
-            error.addProperty("error", "Error al actualizar la contrasena en el servidor.");
+            error.addProperty("error", "Error al actualizar la contraseña en la base de datos.");
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(error.toString()).build();
         }
     }

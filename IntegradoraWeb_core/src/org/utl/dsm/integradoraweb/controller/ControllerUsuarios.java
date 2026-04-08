@@ -9,8 +9,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-
-// Importaciones necesarias para la integracion del envio de correos electronicos a traves de la API de Jakarta Mail
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.mail.PasswordAuthentication;
@@ -35,7 +33,6 @@ public class ControllerUsuarios {
 
         if (rs.next()) {
             int success = rs.getInt("success");
-
             if (success == 1) {
                 u = new Usuarios();
                 u.setId_usuario(rs.getInt("id_usuario"));
@@ -47,11 +44,9 @@ public class ControllerUsuarios {
                 u.setApellido_materno(rs.getString("apellido_materno"));
             }
         }
-
         rs.close();
         cstmt.close();
         conn.close();
-
         return u;
     }
 
@@ -72,16 +67,12 @@ public class ControllerUsuarios {
             cstmt.setString(9, u.getContrasenia());
             cstmt.setString(10, u.getId_rol());
             cstmt.setString(11, u.getId_turno());
-
             cstmt.executeUpdate();
         } finally {
             conn.close();
         }
     }
 
-    // ---------------------------------------------------------------
-    // Metodo encargado de actualizar la informacion general de un usuario existente en la base de datos
-    // ---------------------------------------------------------------
     public void modificar(Usuarios u) throws Exception {
         String query = "{CALL sp_ModificarUsuario(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}";
         ConexionMySQL connMySQL = new ConexionMySQL();
@@ -99,7 +90,6 @@ public class ControllerUsuarios {
             cstmt.setString(9, u.getId_rol());
             cstmt.setString(10, u.getId_turno());
             cstmt.setString(11, u.getId_estatus());
-
             cstmt.executeUpdate();
         } finally {
             conn.close();
@@ -113,7 +103,6 @@ public class ControllerUsuarios {
         Connection conn = connMySQL.open();
 
         try (CallableStatement cstmt = conn.prepareCall(query); ResultSet rs = cstmt.executeQuery()) {
-
             while (rs.next()) {
                 Usuarios u = new Usuarios();
                 u.setId_usuario(rs.getInt("id_usuario"));
@@ -121,7 +110,6 @@ public class ControllerUsuarios {
                 u.setId_rol(rs.getString("id_rol"));
                 u.setId_turno(rs.getString("id_turno"));
                 u.setId_estatus(rs.getString("id_estatus"));
-
                 u.setId_persona(rs.getInt("id_persona"));
                 u.setNombre(rs.getString("nombre"));
                 u.setApellido_paterno(rs.getString("apellido_paterno"));
@@ -130,7 +118,6 @@ public class ControllerUsuarios {
                 u.setTelefono(rs.getString("telefono"));
                 u.setFecha_nacimiento(rs.getString("fecha_nacimiento"));
                 u.setDireccion(rs.getString("direccion"));
-
                 listaUsuarios.add(u);
             }
         } finally {
@@ -153,11 +140,9 @@ public class ControllerUsuarios {
     }
 
     // ==========================================
-    // Seccion de metodos destinados al flujo de recuperacion y restablecimiento de contrasenas
+    // Metodos para Recuperacion y Cambio de Contrasena
     // ==========================================
-    
     public void actualizarPassword(String correo, String nuevaContrasenia) throws Exception {
-        // Invocacion al procedimiento almacenado que aplica el hash SHA256 y actualiza el registro en la base de datos
         String query = "{CALL sp_ActualizarPassword(?, ?)}";
         ConexionMySQL connMySQL = new ConexionMySQL();
         Connection conn = connMySQL.open();
@@ -165,7 +150,6 @@ public class ControllerUsuarios {
         try (CallableStatement cstmt = conn.prepareCall(query)) {
             cstmt.setString(1, correo);
             cstmt.setString(2, nuevaContrasenia);
-
             cstmt.executeUpdate();
         } finally {
             conn.close();
@@ -173,11 +157,9 @@ public class ControllerUsuarios {
     }
 
     public void enviarCorreoRecuperacion(String correoDestino) throws Exception {
-        // Definicion de las credenciales de autenticacion del sistema emisor
         final String correoOrigen = "yoqzan25@gmail.com";
-        final String contraseniaApp = "lmuzznqpjtdcxzyt";
+        final String contraseniaApp = "ujrroquepkrtmsib";
 
-        // Configuracion de las propiedades del servidor SMTP para la conexion segura con Gmail
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
@@ -185,7 +167,6 @@ public class ControllerUsuarios {
         props.put("mail.smtp.port", "587");
         props.put("mail.smtp.ssl.protocols", "TLSv1.2");
 
-        // Creacion de la sesion autenticada utilizando la contrasena de aplicacion generada
         Session session = Session.getInstance(props, new jakarta.mail.Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
@@ -194,16 +175,13 @@ public class ControllerUsuarios {
         });
 
         try {
-            // Construccion del objeto MimeMessage con los datos del remitente y destinatario
             Message message = new MimeMessage(session);
             message.setFrom(new InternetAddress(correoOrigen));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(correoDestino));
             message.setSubject("Recuperacion de Contrasena - Gestion UTL");
 
-            // Generacion de la URL apuntando al dominio en Railway
             String enlace = "https://netbeansintegradora-production.up.railway.app/index.html?correo=" + correoDestino + "&reset=true";
 
-            // Estructuracion del cuerpo del correo en formato HTML para mejorar la presentacion visual
             String html = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px;'>"
                     + "<h2 style='color: #2a2155; text-align: center;'>Gestion UTL</h2>"
                     + "<p style='font-size: 16px; color: #333;'>Hemos recibido una solicitud para restablecer la contrasena de tu cuenta.</p>"
@@ -215,13 +193,8 @@ public class ControllerUsuarios {
                     + "</div>";
 
             message.setContent(html, "text/html; charset=utf-8");
-
-            // Ejecucion del envio del mensaje a traves de la red y registro en consola para trazabilidad
             Transport.send(message);
-            System.out.println("Correo enviado exitosamente a: " + correoDestino);
-
         } catch (MessagingException e) {
-            e.printStackTrace();
             throw new Exception("Error al conectar con Gmail: " + e.getMessage());
         }
     }
